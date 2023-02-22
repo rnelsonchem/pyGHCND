@@ -1,0 +1,56 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "noaa_temps"
+version = "0.0.1"
+
+description = "Aggregate and plot NOAA weather data"
+keywords = [ "NOAA", "Weather", "Plot", ]
+#readme = "README.md"
+license = {text = "GPL-3.0-or-later"}
+
+authors = [
+  { name="Ryan Nelson", email="rnelsonchem@gmail.com" },
+]
+
+classifiers = [
+    'Development Status :: 4 - Beta',
+    'Intended Audience :: Science/Research',
+    'License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)',
+    'Programming Language :: Python :: 3',
+]
+
+requires-python = ">=3"
+dependencies = [
+        'pandas>=1.0',
+        'pyarrow>=8.0',
+        'openpyxl',
+        'requests',
+        'scipy',
+        'matplotlib'
+        ]
+        
+[project.urls]
+#"Homepage" = "https://github.com/rnelsonchem/costcalc2"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[project.optional-dependencies]
+test = [ 
+    "pytest", 
+]
+
+dev = [
+    "pytest", 
+    "build", 
+    "ipython",
+    "twine",
+]
+
+[tool.pytest.ini_options]
+addopts = [
+    "--import-mode=prepend",
+]
