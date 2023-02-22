@@ -120,6 +120,7 @@ class NOAAWeatherCore(object):
 
         for data_group in ['TMAX', 'TMIN', 'SNOW', 'PRCP', 'SNPR']:
             vals.append([group[data_group].min(), data_group, 'min'])
+            vals.append([group[data_group].max(), data_group, 'max'])
             vals.append([group[data_group].mean(), data_group, 'mean'])
             vals.append([group[data_group].std(), data_group, 'std'])
             
