@@ -154,7 +154,7 @@ class NOAAWeatherCore(object):
 
         self.stats = pivot 
 
-    def update_data(self, print_year=False):
+    def update_data(self, status=False):
         if self._has_data:
             last_date = self.raw.index[-1] + timedelta(days=1)
             begin = int(last_date.strftime('%Y'))
@@ -176,9 +176,14 @@ class NOAAWeatherCore(object):
             # If restarting an broken data download, load the saved data
             with open(temp_file, 'rb') as fp:
                 begin, end, results = pickle.load(fp)
+        
+        if status:
+            from tqdm import trange
+            rng = trange
+        else:
+            rng = range
 
-        for year in range(begin, end): 
-            if print_year: print(year)
+        for year in rng(begin, end): 
             new_res = self._download_year(year)
             results.extend(new_res)
            

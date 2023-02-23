@@ -29,7 +29,9 @@ dependencies = [
         'openpyxl',
         'requests',
         'scipy',
-        'matplotlib'
+        'matplotlib',
+        'tqdm',
+        'ipywidgets',
         ]
         
 [project.urls]
