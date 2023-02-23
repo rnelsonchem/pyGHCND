@@ -198,3 +198,36 @@ class MPLVis(object):
         plt.savefig(self.folder / 'precip_plot.png', dpi=dpi)
 
         plt.show()
+
+    def plot_daily_temp(self, day, month, cat='TMIN', dpi=300):
+        mask = (self.raw.index.month == month) & (self.raw.index.day == day)
+        data = self.raw.loc[mask, cat]
+        years = data.index.year
+
+        ydiff = self.raw.loc[mask, 'yeardiff']
+        slope = self.stats.loc[(month, day), (cat, 'slope')]
+        icept = self.stats.loc[(month, day), (cat, 'icept')]
+        line = slope*ydiff + icept
+
+        color = 'b' if cat == 'TMIN' else 'b'
+
+        ## TOP PLOT ##
+        plt.subplot(3, 1, (1,2))
+        plt.plot(years, data, 'o-', color=color, alpha=0.5, mew=0)
+        plt.plot(years, line, '0.3', lw=1)
+        plt.tick_params(bottom=False, labelbottom=False,)
+        plt.ylabel('Temp (deg F)')
+        label = 'Low' if cat == 'TMIN' else 'High'
+        plt.title(f'{label} Temp Trend for {month}/{day}')
+
+        ## BOTTOM PLOT ##
+        plt.subplot(3, 1, 3)
+        plt.plot(years, data-line, 'ko-', alpha=0.5, mew=0)
+        plt.ylabel('Residuals')
+        plt.xlabel('Year')
+
+        plt.tight_layout()
+
+        plt.savefig(self.folder / 'daily_temp_plot.png', dpi=dpi)
+
+        plt.show()
