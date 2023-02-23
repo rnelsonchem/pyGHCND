@@ -92,17 +92,17 @@ class NOAAWeatherCore(object):
         data.TMAX = (data.TMAX*0.1)*9/5 + 32
         data.TMIN = (data.TMIN*0.1)*9/5 + 32
         # Drop some obviously bad values (assumptions)
-        data.TMAX[data.TMAX > 130.] = np.nan
-        data.TMIN[data.TMIN > 130.] = np.nan
+        data.loc[data.TMAX > 130., 'TMAX'] = np.nan
+        data.loc[data.TMIN > 130., 'TMIN'] = np.nan
         # Convert precipitation from mm to inches
         data.PRCP = (data.PRCP*0.1)/25.4 
-        data.SNOW = data.SNOW/25.4
-        data.SNWD = data.SNWD/25.4
+        if hasattr(data, 'SNOW'): data.SNOW = data.SNOW/25.4
+        if hasattr(data, 'SNWD'): data.SNWD = data.SNWD/25.4
         # If precipitation isn't given, ie NaN, then it was zero on that day
         # (assumption)
         data.fillna(value={'PRCP':0, 'SNOW':0, 'SNWD':0,}, inplace=True)
         # Esitmate of total water = rain + snow/10, i.e. 1" snow = 0.1" rain
-        data['SNPR'] = data.PRCP + data.SNOW/10.
+        if hasattr(data, 'SNOW'): data['SNPR'] = data.PRCP + data.SNOW/10.
 
         if self._has_data:
             # Combine the old/new data, but be sure to mask out any partial
