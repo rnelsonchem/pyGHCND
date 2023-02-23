@@ -73,7 +73,7 @@ class MPLVis(object):
 
         plt.show()
 
-    def plot_prcp(self, use_year=None, ptype='PRCP', dpi=300):
+    def plot_prcp(self, use_year=None, ptype='PRCP', n_missing=10, dpi=300):
 
         if not use_year:
             use_year = self.now.year
@@ -102,7 +102,10 @@ class MPLVis(object):
 
         # Plot all other years as transparent, thin blue lines
         for year, df in csgb:
-            # Need to do this for incomplete years
+            # Skip years that do not have enough data points
+            if len(df) < (365-n_missing): continue
+
+            # Need to redo this every time for incomplete years
             maskdates = pd.to_datetime({"day": df.index.day,
                                     "month": df.index.month,
                                     "year": 2000})
@@ -187,8 +190,12 @@ class MPLVis(object):
         plt.hist(totals, bins=bins, color='b', alpha=0.5)
 
         # Plot the average, current year as vertical lines
-        plt.axvline(totals[use_year], color='r', lw=1)
         plt.axvline(totals.mean(), color='k', lw=1)
+        mask = raw.index.year == use_year
+        # Make sure that there are actually some data points in this year
+        if mask.sum() != 0:
+            masked = raw[mask]
+            plt.axvline(masked[ptype].sum(), color='r', lw=1)
 
         plt.ylabel('Count')
         plt.xlabel('Inches Tot.')
