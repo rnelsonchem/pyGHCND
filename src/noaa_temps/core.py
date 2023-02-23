@@ -203,4 +203,28 @@ class NOAAWeatherCore(object):
         # This method must be defined as a data_store object class
         self._stats_df_save()
 
+    def daily_trends_sorted(self, by=None, ascending=False, abs_val=True):
+        cats = ('TMIN', 'TMAX')
+        dfs = []
 
+        for cat in cats:
+            slopes = self.stats.loc[:, [(cat, 'slope'), (cat, 'p_slope')]]\
+                    .droplevel(0, axis=1)
+            slopes['-log_p'] = -np.log10(slopes['p_slope'])
+
+            if abs_val: weight = slopes['slope'].abs()
+            else: weight = slopes['slope']
+            slopes['-log_p*slope'] = -np.log10(slopes['p_slope'])*weight
+            
+            if by:
+                slopes = slopes.sort_values(by=by, ascending=ascending)\
+                        .reset_index()
+
+            dfs.append(slopes)
+
+        totals = pd.concat(dfs, axis=1, keys=cats)
+        if by:
+            totals['rank'] = np.arange(1, totals.shape[0] + 1)
+            totals.set_index('rank', inplace=True)
+
+        return totals
