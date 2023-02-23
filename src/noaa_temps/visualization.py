@@ -277,7 +277,7 @@ class MPLVis(object):
 
         ax_tl.tick_params('x', bottom=False, labelbottom=False)
         ax_tl.set_ylim(-y_lim, y_lim)
-        ax_tl.set_title('Temperatur Trend by Date', size=12, color='0.3')
+        ax_tl.set_title('Temperature Trend by Date', size=12, color='0.3')
 
         ax_tr.tick_params(left=False, labelleft=False, bottom=False, 
                 labelbottom=False)
