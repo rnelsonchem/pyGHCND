@@ -231,3 +231,74 @@ class MPLVis(object):
         plt.savefig(self.folder / 'daily_temp_plot.png', dpi=dpi)
 
         plt.show()
+
+    def plot_daily_trends(self, p=0.05, dpi=300):
+        fig = plt.figure(figsize=(8,4))
+
+        ax_tl = plt.subplot(2, 4, (1,3))
+        ax_tr = plt.subplot(2, 4, 4)
+        ax_bl = plt.subplot(2, 4, (5,7))
+        ax_br = plt.subplot(2, 4, 8)
+
+        cats = {'TMAX': [ax_tl, ax_tr, 'r',],
+                  'TMIN': [ax_bl, ax_br, 'b'],
+               }
+        slope_lims = []
+        bin_lims = []
+
+        for cat in cats:
+            left, right, color = cats[cat]
+            slopes = self.stats.loc[:, (cat, 'slope')]
+            pvals = self.stats.loc[:, (cat, 'p_slope')]
+            dates = pd.to_datetime({'day': slopes.index.get_level_values(1),
+                           'month': slopes.index.get_level_values(0),
+                           'year': 2000})
+            
+            # Yearly plot
+            left.axhline(0, color='0.3', lw=0.5)
+            left.plot(dates, slopes, 'o', color=color, alpha=0.5, ms=2)
+            left.plot(dates, slopes.where(pvals < p), 'o', color='k', 
+                    alpha=0.7, ms=2.5)
+
+            # Histogram
+            right.axhline(0, color='0.3', lw=0.5)
+            # Plot the regular histogram
+            n, bins, bars = right.hist(slopes, color=color, 
+                    orientation='horizontal', alpha=0.5)
+            # Plot significant slopes with a slightly darker shading
+            right.hist(slopes.where(pvals < p), bins, alpha=0.7, color='k',
+                    rwidth=1, orientation='horizontal')
+            
+            slope_lims.append( slopes.abs().max() )
+            bin_lims.append( n.max() )
+
+        y_lim = np.max(slope_lims)*1.2
+        x_lim = np.max(bin_lims)*1.2
+
+        ax_tl.tick_params('x', bottom=False, labelbottom=False)
+        ax_tl.set_ylim(-y_lim, y_lim)
+        ax_tl.set_title('Temperatur Trend by Date', size=12, color='0.3')
+
+        ax_tr.tick_params(left=False, labelleft=False, bottom=False, 
+                labelbottom=False)
+        ax_tr.set_ylim(-y_lim, y_lim)
+        ax_tr.set_xlim(0, x_lim)
+        ax_tr.set_title('Trend Histogram', size=12, color='0.3')
+
+        ax_bl.xaxis.set_major_formatter(mpd.DateFormatter('%b'))
+        ax_bl.set_xlabel('Month')
+        ax_bl.set_ylim(-y_lim, y_lim)
+
+        ax_br.tick_params(left=False, labelleft=False)
+        ax_br.set_ylim(-y_lim, y_lim)
+        ax_br.set_xlim(0, x_lim)
+        ax_br.set_xlabel('Count')
+
+        fig.supylabel('Daily Trend Slopes (deg F/year)', size=12, 
+                color='0.3')
+
+        plt.tight_layout()
+
+        plt.savefig(self.folder / 'daily_trends.png', dpi=dpi)
+
+        plt.show()
