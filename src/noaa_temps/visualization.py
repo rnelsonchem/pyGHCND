@@ -206,32 +206,62 @@ class MPLVis(object):
 
         plt.show()
 
-    def plot_daily_temp(self, day, month, cat='TMIN', dpi=300):
-        mask = (self.raw.index.month == month) & (self.raw.index.day == day)
-        data = self.raw.loc[mask, cat]
-        years = data.index.year
+    def plot_daily_temp(self, month, day, temp_type='both', p=0.05, 
+                dpi=300):
+        # Create the figure and axes depending on number of plots
+        cats = []
+        if temp_type == 'both':
+            fig = plt.figure(figsize=(8,4))
+            cats.append(['TMIN', plt.subplot(3, 2, (1,3)),
+                        plt.subplot(3, 2, 5)])
+            cats.append(['TMAX', plt.subplot(3, 2, (2, 4)),
+                        plt.subplot(3, 2, 6),])
+        elif temp_type in ['TMIN', 'TMAX']:
+            fig = plt.figure()
+            cats.append([temp_type, plt.subplot(3, 1, (1,2)),
+                        plt.subplot(3, 1, 3),])
+        else:
+            raise ValueError(f'{temp_type} is not a valid entry')
 
-        ydiff = self.raw.loc[mask, 'yeardiff']
-        slope = self.stats.loc[(month, day), (cat, 'slope')]
-        icept = self.stats.loc[(month, day), (cat, 'icept')]
-        line = slope*ydiff + icept
+        # Plot the data
+        for cat, top, bottom in cats:
+            mask = (self.raw.index.month == month) & (self.raw.index.day == day)
+            data = self.raw.loc[mask, cat]
+            years = data.index.year
 
-        color = 'b' if cat == 'TMIN' else 'b'
+            ydiff = self.raw.loc[mask, 'yeardiff']
+            slope = self.stats.loc[(month, day), (cat, 'slope')]
+            icept = self.stats.loc[(month, day), (cat, 'icept')]
+            line = slope*ydiff + icept
+            
+            pval = self.stats.loc[(month, day), (cat, 'p_slope')]
+            lstyle = '-' if pval < p else '--'
+            color = 'b' if cat == 'TMIN' else 'r'
 
-        ## TOP PLOT ##
-        plt.subplot(3, 1, (1,2))
-        plt.plot(years, data, 'o-', color=color, alpha=0.5, mew=0)
-        plt.plot(years, line, '0.3', lw=1)
-        plt.tick_params(bottom=False, labelbottom=False,)
-        plt.ylabel('Temp (deg F)')
-        label = 'Low' if cat == 'TMIN' else 'High'
-        plt.title(f'{label} Temp Trend for {month}/{day}')
+            ## TOP PLOT ##
+            top.plot(years, data, 'o-', color=color, alpha=0.5, mew=0, ms=4)
+            top.plot(years, line, lstyle, color='0.3', lw=1)
+            top.tick_params(bottom=False, labelbottom=False,)
 
-        ## BOTTOM PLOT ##
-        plt.subplot(3, 1, 3)
-        plt.plot(years, data-line, 'ko-', alpha=0.5, mew=0)
-        plt.ylabel('Residuals')
-        plt.xlabel('Year')
+            ## BOTTOM PLOT ##
+            resid = data-line
+            bottom.plot(years, resid, 'ko-', alpha=0.5, mew=0, ms=4)
+            bottom.set_xlabel('Year')
+            resid_max = 1.15*resid.abs().max()
+            bottom.set_ylim(-resid_max, resid_max) 
+
+        cats[0][1].set_ylabel('Temp (deg F)')
+        cats[0][2].set_ylabel('Residuals')
+
+        title = f'Temperature Trends for {month}/{day}'
+        if temp_type == 'both':
+            cats[0][1].set_title('Daily Lows', fontsize=12, color='0.3')
+            cats[1][1].set_title('Daily Highs', fontsize=12, color='0.3')
+            fig.suptitle(title, fontsize=14, color='0.3')
+        else:
+            label = 'Low' if temp_type == 'TMIN' else 'High'
+            title = f'{label} {title}'
+            cats[0][1].set_title(title)
 
         plt.tight_layout()
 
@@ -284,7 +314,7 @@ class MPLVis(object):
 
         ax_tl.tick_params('x', bottom=False, labelbottom=False)
         ax_tl.set_ylim(-y_lim, y_lim)
-        ax_tl.set_title('Temperature Trend by Date', size=12, color='0.3')
+        ax_tl.set_title('Temperature Trends by Date', size=12, color='0.3')
 
         ax_tr.tick_params(left=False, labelleft=False, bottom=False, 
                 labelbottom=False)
