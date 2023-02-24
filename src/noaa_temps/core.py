@@ -88,14 +88,16 @@ class NOAAWeatherCore(object):
         data = data.loc[~mask].copy()
 
         # Data conversions
-        # Convert temps from C to F
-        data.TMAX = (data.TMAX*0.1)*9/5 + 32
-        data.TMIN = (data.TMIN*0.1)*9/5 + 32
-        # Drop some obviously bad values (assumptions)
-        data.loc[data.TMAX > 130., 'TMAX'] = np.nan
-        data.loc[data.TMIN > 130., 'TMIN'] = np.nan
+        # Convert temps from C to F, drop obviously bad values
+        if hasattr(data, 'TMAX'):
+            data.TMAX = (data.TMAX*0.1)*9/5 + 32
+            data.loc[data.TMAX > 130., 'TMAX'] = np.nan
+        if hasattr(data, 'TMIN'):
+            data.TMIN = (data.TMIN*0.1)*9/5 + 32
+            data.loc[data.TMIN > 130., 'TMIN'] = np.nan
+
         # Convert precipitation from mm to inches
-        data.PRCP = (data.PRCP*0.1)/25.4 
+        if hasattr(data, 'PRCP'): data.PRCP = (data.PRCP*0.1)/25.4 
         if hasattr(data, 'SNOW'): data.SNOW = data.SNOW/25.4
         if hasattr(data, 'SNWD'): data.SNWD = data.SNWD/25.4
         # If precipitation isn't given, ie NaN, then it was zero on that day
