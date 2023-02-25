@@ -7,7 +7,7 @@ import matplotlib.dates as mpd
 
 class MPLVis(object):
 
-    def plot_temp(self, use_year=None, dpi=300):
+    def plot_temp(self, use_year=None, show=True, save=True, dpi=300):
 
         if not use_year:
             use_year = self.now.year
@@ -68,12 +68,15 @@ class MPLVis(object):
 
         plt.tight_layout()
 
-        # Save the plot figure
-        plt.savefig(self.folder / 'yearly_plot.png', dpi=dpi)
+        if save:
+            plt.savefig(self.folder / f'yearly_plot_{use_year}.png', 
+                    dpi=dpi)
+        if show:
+            plt.show()
+        plt.close()
 
-        plt.show()
-
-    def plot_prcp(self, use_year=None, ptype='PRCP', n_missing=10, dpi=300):
+    def plot_prcp(self, use_year=None, ptype='PRCP', n_missing=10, 
+                show=True, save=True, dpi=300):
 
         if not use_year:
             use_year = self.now.year
@@ -202,12 +205,15 @@ class MPLVis(object):
 
         plt.tight_layout()
 
-        plt.savefig(self.folder / 'precip_plot.png', dpi=dpi)
-
-        plt.show()
+        if save:
+            plt.savefig(self.folder / f'precip_plot_{use_year}.png', 
+                    dpi=dpi)
+        if show:
+            plt.show()
+        plt.close()
 
     def plot_daily_temp(self, month, day, temp_type='both', p=0.05, 
-                dpi=300):
+                show=True, save=True, dpi=300):
         # Create the figure and axes depending on number of plots
         cats = []
         if temp_type == 'both':
@@ -265,11 +271,14 @@ class MPLVis(object):
 
         plt.tight_layout()
 
-        plt.savefig(self.folder / 'daily_temp_plot.png', dpi=dpi)
+        if save:
+            plt.savefig(self.folder / f'daily_temp_plot_{temp_type}.png', 
+                    dpi=dpi)
+        if show:
+            plt.show()
+        plt.close()
 
-        plt.show()
-
-    def plot_daily_trends(self, p=0.05, dpi=300):
+    def plot_daily_trends(self, p=0.05, show=True, save=True, dpi=300):
         fig = plt.figure(figsize=(8,4))
 
         ax_tl = plt.subplot(2, 4, (1,3))
@@ -336,6 +345,8 @@ class MPLVis(object):
 
         plt.tight_layout()
 
-        plt.savefig(self.folder / 'daily_trends.png', dpi=dpi)
-
-        plt.show()
+        if save:
+            plt.savefig(self.folder / 'daily_trends.png', dpi=dpi)
+        if show:
+            plt.show()
+        plt.close()
