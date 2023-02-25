@@ -194,16 +194,17 @@ class NOAAWeatherCore(object):
             with open(temp_file, 'wb') as fp:
                 pickle.dump([begin, end, results,], fp)
 
-        # Process and save the raw data
-        self._raw_df_proc(results)
-        # This method must be defined as a data_store object class
-        self._raw_df_save()
-        # Remove the tempfile if the previous calls are successful
-        temp_file.unlink()
+        if results != []:
+            # Process and save the raw data
+            self._raw_df_proc(results)
+            # This method must be defined as a data_store object class
+            self._raw_df_save()
+            # Remove the tempfile if the previous calls are successful
+            temp_file.unlink()
 
-        self._stats_df_proc()
-        # This method must be defined as a data_store object class
-        self._stats_df_save()
+            self._stats_df_proc()
+            # This method must be defined as a data_store object class
+            self._stats_df_save()
 
     def daily_trends_sorted(self, by=None, ascending=False, abs_val=True):
         cats = ('TMIN', 'TMAX')
