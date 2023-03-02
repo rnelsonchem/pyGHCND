@@ -9,6 +9,8 @@ import numpy as np
 import pandas as pd
 import scipy.stats as sps
 
+from scipy.signal import fftconvolve
+
 class NOAAWeatherCore(object):
     def __init__(self, stationid, start_date, token_file, data_folder='.'):
         self.stationid = stationid
@@ -156,6 +158,12 @@ class NOAAWeatherCore(object):
 
         self.stats = pivot 
 
+    def _lin_smooth(self, data, n=15):
+        kernel = np.ones(n)/n
+        extended = np.r_[data[-n:], data, data[:n]]
+        smoothed = fftconvolve(extended, kernel, 'same')
+        return smoothed[n:-n] 
+
     def update_data(self, status=False):
         if self._has_data:
             last_date = self.raw.index[-1] + timedelta(days=1)
@@ -206,28 +214,37 @@ class NOAAWeatherCore(object):
             # This method must be defined as a data_store object class
             self._stats_df_save()
 
-    def daily_trends_sorted(self, by=None, ascending=False, abs_val=True):
+    def daily_trends_sort(self, by='-log_p*slope', ascending=False, 
+            abs_val=True):
         cats = ('TMIN', 'TMAX')
-        dfs = []
+#        dfs = []
 
         for cat in cats:
-            slopes = self.stats.loc[:, [(cat, 'slope'), (cat, 'p_slope')]]\
-                    .droplevel(0, axis=1)
-            slopes['-log_p'] = -np.log10(slopes['p_slope'])
+#            slopes = self.stats.loc[:, [(cat, 'slope'), (cat, 'p_slope')]]\
+#                    .droplevel(0, axis=1)
+            slopes = self.stats[(cat, 'slope')]
+            p_slope = self.stats[(cat, 'p_slope')]
+#            slopes['-log_p'] = -np.log10(slopes['p_slope'])
+            self.stats[(cat, '-log_p')] = -np.log10(p_slope)
 
-            if abs_val: weight = slopes['slope'].abs()
-            else: weight = slopes['slope']
-            slopes['-log_p*slope'] = -np.log10(slopes['p_slope'])*weight
+#            if abs_val: weight = slopes['slope'].abs()
+#            else: weight = slopes['slope']
+            if abs_val: weight = slopes.abs()
+            else: weight = slopes
+#            slopes['-log_p*slope'] = -np.log10(slopes['p_slope'])*weight
+            self.stats[(cat,'-log_p*slope')] = -np.log10(p_slope)*weight
             
-            if by:
-                slopes = slopes.sort_values(by=by, ascending=ascending)\
-                        .reset_index()
+#            slopes = slopes.sort_values(by=by, ascending=ascending)\
+#                    .reset_index()
+            ranks = sps.rankdata(self.stats[(cat, by)], method='ordinal') 
 
-            dfs.append(slopes)
+#            dfs.append(slopes)
+            self.stats[(cat, 'rank')] = 366 - ranks
 
-        totals = pd.concat(dfs, axis=1, keys=cats)
-        if by:
-            totals['rank'] = np.arange(1, totals.shape[0] + 1)
-            totals.set_index('rank', inplace=True)
+        self._stats_df_save()
+#        totals = pd.concat(dfs, axis=1, keys=cats)
+#        if by:
+#            totals['rank'] = np.arange(1, totals.shape[0] + 1)
+#            totals.set_index('rank', inplace=True)
 
-        return totals
+#        return totals

@@ -7,8 +7,8 @@ import matplotlib.dates as mpd
 
 class MPLVis(object):
 
-    def plot_temp(self, use_year=None, show=True, save=True, dpi=300):
-
+    def plot_temp(self, use_year=None, trends=True, smooth=15, 
+                show=True, save=True, dpi=300):
         if not use_year:
             use_year = self.now.year
 
@@ -27,20 +27,48 @@ class MPLVis(object):
         ax = plt.axes()
 
         for dcat, color in [('TMAX', 'r'), ('TMIN', 'b')]:
-            # Transparent filled areas for some ranges of data max values
-            plt.fill_between(dates,
-                            stats[(dcat, 'min')], stats[(dcat, 'max')],
-                            color=color, alpha=0.1, linewidth=0)
+            # Collect some of the data that are needed
+            mean = stats[(dcat, 'mean')]
+            std = stats[(dcat, 'std')]
+            mn = stats[(dcat, 'min')]
+            mx = stats[(dcat, 'max')]
+            if trends:
+                slopes = stats[(dcat, 'slope')]
+                icept = stats[(dcat, 'icept')]
+                # Calculate some trend data
+                final_year = self.now.year - self.start 
+                trend = final_year*slopes + icept
+
+            # Smooth the data if necessary
+            if smooth:
+                mean = self._lin_smooth(mean, smooth)
+                std = self._lin_smooth(std, smooth)
+            if smooth and trends:
+                icept = self._lin_smooth(icept, smooth)
+                trend = self._lin_smooth(trend, smooth)
+                
+            # Transparent filled areas for extreme data
+            mxs = plt.fill_between(dates, mn, mx, color=color, 
+                                   alpha=0.1, linewidth=0)
+
+            # Transparent average +/- one StDev
+            sts = plt.fill_between(dates, mean - std, mean + std,
+                             color=color, alpha=0.2, linewidth=0)
             
-            # Average +/- one StDev
-            plt.fill_between(dates, 
-                             stats[(dcat, 'mean')] - stats[(dcat, 'std')], 
-                             stats[(dcat, 'mean')] + stats[(dcat, 'std')],
-                             color=color, alpha=0.15, linewidth=0)
-
             # Plot for the average high/low temps as thin black lines
-            plt.plot(dates, stats[(dcat, 'mean')].values, 'k', lw=0.5)
+            mns, = plt.plot(dates, mean, 'k', lw=0.5)
+            if trends:
+                ics, = plt.plot(dates, icept, ':', c='0.2', lw=0.5)
+                tds, = plt.plot(dates, trend, '--', c='0.2', lw=0.5)
 
+        # Start some lists for legend info
+        leg_art = [mns,]
+        leg_str = ['mean',]
+        if trends:
+            leg_art.extend([ics, tds])
+            leg_str.extend([f'linear est. {self.start}', 
+                    f'linear est. {self.now.year}',])
+            
         # Plot most recent year
         mask = raw.index.year == use_year
         # Make sure that there are actually some data points in this year
@@ -49,8 +77,17 @@ class MPLVis(object):
             maskdates = pd.to_datetime({"day": masked.index.day,
                                     "month": masked.index.month,
                                     "year": 2000})
-            plt.plot(maskdates, masked.TMAX, c='r', lw=0.5)
-            plt.plot(maskdates, masked.TMIN, c='b', lw=0.5)
+            hg, = plt.plot(maskdates, masked.TMAX, c='r', lw=0.5)
+            lw, = plt.plot(maskdates, masked.TMIN, c='b', lw=0.5)
+            
+            leg_art.extend([hg, lw,])
+            leg_str.extend([f'{use_year} high', f'{use_year} low',])
+
+        # Add a legend to the figure
+        leg_art.extend([sts, mxs])
+        leg_str.extend(['mean + std', 'extreme values'])
+        plt.legend(leg_art, leg_str, loc='lower center', fontsize=8, 
+                labelcolor='0.3')
 
         # And we might want to see a vertical line for today 
         plt.axvline(datetime(2000, self.now.month, self.now.day),
@@ -144,7 +181,6 @@ class MPLVis(object):
         #ax1.xaxis.set_major_formatter(mpd.DateFormatter('%b'))
         plt.tick_params('x', bottom=False, labelbottom=False)
         plt.legend(loc='upper left')
-
 
         ### SECOND PLOT ###
         ax2 = plt.subplot(3,3,(7,8))
