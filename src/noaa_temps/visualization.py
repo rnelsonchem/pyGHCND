@@ -386,3 +386,44 @@ class MPLVis(object):
         if show:
             plt.show()
         plt.close()
+
+    def plot_temp_diffs(self, ndays=90, show=True, save=True, dpi=300):
+        fig = plt.figure(figsize=(8,4))
+        top = plt.subplot(211)
+        bot = plt.subplot(212)
+
+        for cat, ax in [('TMAX', top), ('TMIN', bot)]:
+            recent = self.raw[[cat]].iloc[-ndays:].reset_index()
+            dates = recent['date']
+            recent = recent.set_index([recent.date.dt.month, recent.date.dt.day])\
+                            .rename_axis(index=['month', 'day'])[cat]
+            index = recent.index
+
+            mean = self.stats.loc[index, (cat, 'mean')]
+            std = self.stats.loc[index, (cat, 'std')]
+            mint = self.stats.loc[index, (cat, 'min')] - mean
+            maxt = self.stats.loc[index, (cat, 'max')] - mean
+            resid = (recent - mean)
+            
+            color = 'r' if cat == 'TMAX' else 'b'
+            ax.fill_between(dates, mint, maxt, color=color, alpha=0.1, lw=0)
+            ax.fill_between(dates, -std, std, color=color, alpha=0.2, lw=0)
+            ax.axhline(0, lw=0.5, color='0.2')
+            ax.plot(dates, resid, 'o-', color=color, alpha=0.5, mew=0, ms=4)
+            
+        top.tick_params(bottom=False, labelbottom=False)
+        top.set_title(f'Temperature Deviations for Previous {ndays} Days',
+                color='0.3', size=12)
+        top.set_ylabel('High Temps', color='0.3')
+        bot.set_ylabel('Low Temps', color='0.3')
+        bot.xaxis.set_major_formatter(mpd.DateFormatter('%d-%b'))
+        bot.set_xlabel('Dates', color='0.3')
+        fig.supylabel('Difference (Actual - Mean)', color='0.3')
+
+        plt.tight_layout()
+
+        if save:
+            plt.savefig(self.folder / 'temp_diffs.png', dpi=dpi)
+        if show:
+            plt.show()
+        plt.close()
