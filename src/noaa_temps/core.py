@@ -36,10 +36,11 @@ class NOAAWeatherCore(object):
 
         req = requests.get(req_str, headers={'token': self.token})
 
-        # Skip error checking for debugging purposes
-        if not debug:
-            if req.status_code != 200:
-                raise ValueError('Status code != 200')
+#        # Skip error checking for debugging purposes
+#        if not debug:
+#            if req.status_code != 200:
+#                print(req)
+#                raise ValueError('Status code != 200')
 
         return req
 
@@ -202,7 +203,10 @@ class NOAAWeatherCore(object):
             with open(temp_file, 'wb') as fp:
                 pickle.dump([begin, end, results,], fp)
 
-        if results != []:
+        if results == []:
+            temp_file.unlink()
+
+        elif results != []:
             # Process and save the raw data
             self._raw_df_proc(results)
             # This method must be defined as a data_store object class
