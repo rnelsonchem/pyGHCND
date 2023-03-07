@@ -25,8 +25,31 @@ class NOAAWeatherCore(object):
         # This method should be defined in a data_store class
         self._load_data()
 
+    def _api_station_request(self, ):
+        # An API call function for station info
+        req_str = 'http://www.ncei.noaa.gov/cdo-web/api/v2/'\
+                f'stations/GHCND:{self.stationid}'
+
+        status_code_good = False
+        try_count = 0
+        MAX_TRIES = 5
+        while not status_code_good:
+            if try_count == MAX_TRIES:
+                raise ValueError(f"Too many requests (n={MAX_TRIES})")
+
+            req = requests.get(req_str, headers={'token': self.token})
+
+            if req.status_code == 200:
+                try:
+                    json = req.json()
+                except:
+                    try_count += 1
+                return json
+
+            try_count += 1
+
     def _api_data_request(self, year, offset=None, debug=False):
-        # An API call function, separated out for testing purposes
+        # An API call function for weather data
         req_str = 'http://www.ncei.noaa.gov/cdo-web/api/v2/data?'\
             f"datasetid=GHCND&stationid=GHCND:{self.stationid}&"\
             f"startdate={year}-01-01&enddate={year}-12-31&limit=1000&"
