@@ -36,7 +36,7 @@ class MPLVis(object):
                 slopes = stats[(dcat, 'slope')]
                 icept = stats[(dcat, 'icept')]
                 # Calculate some trend data
-                final_year = self.now.year - self.start 
+                final_year = self.now.year - self.start_date
                 trend = final_year*slopes + icept
 
             # Smooth the data if necessary
@@ -66,7 +66,7 @@ class MPLVis(object):
         leg_str = ['mean',]
         if trends:
             leg_art.extend([ics, tds])
-            leg_str.extend([f'linear est. {self.start}', 
+            leg_str.extend([f'linear est. {self.start_date}', 
                     f'linear est. {self.now.year}',])
             
         # Plot most recent year
