@@ -25,7 +25,7 @@ class NOAAWeatherCore(object):
         # This method should be defined in a data_store class
         self._load_data()
 
-    def _api_request(self, year, offset=None, debug=False):
+    def _api_data_request(self, year, offset=None, debug=False):
         # An API call function, separated out for testing purposes
         req_str = 'http://www.ncei.noaa.gov/cdo-web/api/v2/data?'\
             f"datasetid=GHCND&stationid=GHCND:{self.stationid}&"\
@@ -61,7 +61,7 @@ class NOAAWeatherCore(object):
 
     def _download_year(self, year):
         # Can only download data year by year
-        json = self._api_request(year)    
+        json = self._api_data_request(year)    
 
         # If the dataset is empty, then drop out of the run
         if json == {}:
@@ -78,7 +78,7 @@ class NOAAWeatherCore(object):
         offset = limit + 1
 
         for frame in range(frames):
-            json = self._api_request(year, offset)
+            json = self._api_data_request(year, offset)
             results.extend(json['results'])
             offset += limit
 
