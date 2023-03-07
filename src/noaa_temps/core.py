@@ -12,12 +12,16 @@ import scipy.stats as sps
 from scipy.signal import fftconvolve
 
 class NOAAWeatherCore(object):
-    def __init__(self, stationid, start_date, token_file, data_folder='.'):
+    def __init__(self, stationid, token_file, data_folder='.'):
         self.stationid = stationid
-        self.start = start_date
         self.folder = Path(data_folder)
-
         self.token = open(token_file).read().strip()
+
+        station_info = self._api_station_request()
+        if station_info == {}:
+            raise ValueError(f'Bad station info call: {stationid}')
+
+        self.start_date = int(station_info['mindate'][:4])
 
         self.now = datetime.now()
 
@@ -146,7 +150,7 @@ class NOAAWeatherCore(object):
             self.raw = data
 
         # Delta years for linear regression analysis
-        self.raw['yeardiff'] = self.raw.index.year - self.start
+        self.raw['yeardiff'] = self.raw.index.year - self.start_date
 
     def _data_reduce(self, group):
         vals = []
@@ -198,7 +202,7 @@ class NOAAWeatherCore(object):
             last_date = self.raw.index[-1] + timedelta(days=1)
             begin = int(last_date.strftime('%Y'))
         else:
-            begin = self.start
+            begin = self.start_date
         
         # Add 1 to end for the range below
         end = int(self.now.strftime('%Y')) + 1
