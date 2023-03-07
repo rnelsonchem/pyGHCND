@@ -106,7 +106,7 @@ class MPLVis(object):
         plt.tight_layout()
 
         if save:
-            plt.savefig(self.folder / f'yearly_plot_{use_year}.png', 
+            plt.savefig(self.folder / f'yearly_plot.png', 
                     dpi=dpi)
         if show:
             plt.show()
@@ -242,7 +242,7 @@ class MPLVis(object):
         plt.tight_layout()
 
         if save:
-            plt.savefig(self.folder / f'precip_plot_{use_year}.png', 
+            plt.savefig(self.folder / f'precip_plot.png', 
                     dpi=dpi)
         if show:
             plt.show()
