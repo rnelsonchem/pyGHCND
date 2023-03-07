@@ -34,33 +34,43 @@ class NOAAWeatherCore(object):
         if offset:
             req_str += f'offset={offset}&includemetadata=false'
 
-        req = requests.get(req_str, headers={'token': self.token})
 
-#        # Skip error checking for debugging purposes
-#        if not debug:
-#            if req.status_code != 200:
-#                print(req)
-#                raise ValueError('Status code != 200')
+        # Skip error checking for debugging purposes
+        if debug:
+            return req
 
-        return req
+        status_code_good = False
+        try_count = 0
+        MAX_TRIES = 5
+        while not status_code_good:
+            if try_count == MAX_TRIES:
+                raise ValueError(f"Too many requests (n={MAX_TRIES})")
+
+            req = requests.get(req_str, headers={'token': self.token})
+
+            if req.status_code == 200:
+                try:
+                    json = req.json()
+                    if not offset and json != {}:
+                        meta_check = json['metadata']['resultset']
+                except:
+                    try_count += 1
+                return json
+
+            try_count += 1
 
     def _download_year(self, year):
         # Can only download data year by year
-        req = self._api_request(year)    
-        js = req.json()
+        json = self._api_request(year)    
 
         # If the dataset is empty, then drop out of the run
-        if js == {}:
+        if json == {}:
             return []
 
-        try:
-            meta = js['metadata']['resultset']
-            count = meta['count']
-            limit = meta['limit']
-        except:
-            raise ValueError('Metadata error')
-
-        results = js['results']
+        meta = json['metadata']['resultset']
+        count = meta['count']
+        limit = meta['limit']
+        results = json['results']
 
         frames = count//limit
         if count%limit == 0:
@@ -68,13 +78,8 @@ class NOAAWeatherCore(object):
         offset = limit + 1
 
         for frame in range(frames):
-            # 5 request per second max
-            time.sleep(0.2)
-
-            req = self._api_request(year, offset)
-            js = req.json()
-
-            results.extend(js['results'])
+            json = self._api_request(year, offset)
+            results.extend(json['results'])
             offset += limit
 
         return results
