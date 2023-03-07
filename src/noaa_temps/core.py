@@ -254,34 +254,18 @@ class NOAAWeatherCore(object):
     def daily_trends_sort(self, by='-log_p*slope', ascending=False, 
             abs_val=True):
         cats = ('TMIN', 'TMAX')
-#        dfs = []
 
         for cat in cats:
-#            slopes = self.stats.loc[:, [(cat, 'slope'), (cat, 'p_slope')]]\
-#                    .droplevel(0, axis=1)
             slopes = self.stats[(cat, 'slope')]
             p_slope = self.stats[(cat, 'p_slope')]
-#            slopes['-log_p'] = -np.log10(slopes['p_slope'])
             self.stats[(cat, '-log_p')] = -np.log10(p_slope)
 
-#            if abs_val: weight = slopes['slope'].abs()
-#            else: weight = slopes['slope']
             if abs_val: weight = slopes.abs()
             else: weight = slopes
-#            slopes['-log_p*slope'] = -np.log10(slopes['p_slope'])*weight
             self.stats[(cat,'-log_p*slope')] = -np.log10(p_slope)*weight
             
-#            slopes = slopes.sort_values(by=by, ascending=ascending)\
-#                    .reset_index()
             ranks = sps.rankdata(self.stats[(cat, by)], method='ordinal') 
 
-#            dfs.append(slopes)
             self.stats[(cat, 'rank')] = 366 - ranks
 
         self._stats_df_save()
-#        totals = pd.concat(dfs, axis=1, keys=cats)
-#        if by:
-#            totals['rank'] = np.arange(1, totals.shape[0] + 1)
-#            totals.set_index('rank', inplace=True)
-
-#        return totals
