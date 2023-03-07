@@ -10,7 +10,7 @@ class MPLVis(object):
     def plot_temp(self, use_year=None, trends=True, smooth=15, 
                 show=True, save=True, dpi=300):
         if not use_year:
-            use_year = self.now.year
+            use_year = self.end_date
 
         # Simplified variable names for raw/stats table
         raw = self.raw
@@ -116,7 +116,7 @@ class MPLVis(object):
                 show=True, save=True, dpi=300):
 
         if not use_year:
-            use_year = self.now.year
+            use_year = self.end_date
 
         # Simplified variable names for raw/stats table
         raw = self.raw
