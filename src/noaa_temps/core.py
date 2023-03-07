@@ -20,9 +20,10 @@ class NOAAWeatherCore(object):
         station_info = self._api_station_request()
         if station_info == {}:
             raise ValueError(f'Bad station info call: {stationid}')
+        self._station_info = station_info
 
         self.start_date = int(station_info['mindate'][:4])
-
+        self.end_date = int(station_info['maxdate'][:4])
         self.now = datetime.now()
 
         self._has_data = False
@@ -205,7 +206,7 @@ class NOAAWeatherCore(object):
             begin = self.start_date
         
         # Add 1 to end for the range below
-        end = int(self.now.strftime('%Y')) + 1
+        end = self.end_date + 1
         
         # Check for a temp file of downloaded data -- this is used for broken
         # connections
@@ -214,11 +215,11 @@ class NOAAWeatherCore(object):
         if not temp_file.exists():
             # Save a temp file with the current data
             with open(temp_file, 'wb') as fp:
-                pickle.dump([begin, end, results], fp)
+                pickle.dump([begin, results], fp)
         else:   
             # If restarting an broken data download, load the saved data
             with open(temp_file, 'rb') as fp:
-                begin, end, results = pickle.load(fp)
+                begin, results = pickle.load(fp)
         
         if status:
             from tqdm import trange
@@ -233,7 +234,7 @@ class NOAAWeatherCore(object):
             # Incremement this variable so restart at the correct year
             begin += 1
             with open(temp_file, 'wb') as fp:
-                pickle.dump([begin, end, results,], fp)
+                pickle.dump([begin, results,], fp)
 
         if results == []:
             temp_file.unlink()
