@@ -1,20 +1,20 @@
 import pandas as pd
 
 class ParquetStore(object):
-    def _load_data(self, ):
-        if not self.folder.is_dir():
-            self.folder.mkdir()
+    def load_data(self, ghcnd):
+        if not ghcnd.folder.is_dir():
+            ghcnd.folder.mkdir()
 
-        raw_file = self.folder / 'raw.parquet'
+        raw_file = ghcnd.folder / 'raw.parquet'
         if raw_file.exists():
-            self.raw = pd.read_parquet(self.folder / 'raw.parquet')
-            self.stats = pd.read_parquet(self.folder / 'stats.parquet')
-            self._has_data = True
+            ghcnd.raw = pd.read_parquet(ghcnd.folder / 'raw.parquet')
+            ghcnd.stats = pd.read_parquet(ghcnd.folder / 'stats.parquet')
+            ghcnd._has_data = True
 
-    def _raw_df_save(self, ):
-        self.raw.to_parquet(self.folder / 'raw.parquet')
+    def raw_df_save(self, ghcnd):
+        ghcnd.raw.to_parquet(ghcnd.folder / 'raw.parquet')
 
-    def _stats_df_save(self, ):
-        self.stats.to_parquet(self.folder / 'stats.parquet')
+    def stats_df_save(self, ghcnd):
+        ghcnd.stats.to_parquet(ghcnd.folder / 'stats.parquet')
         
 

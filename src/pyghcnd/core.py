@@ -11,11 +11,20 @@ import scipy.stats as sps
 from scipy.signal import fftconvolve
 from tqdm import trange
 
-class NOAAWeatherCore(object):
-    def __init__(self, stationid, token_file, data_folder='.'):
+from . import datastore
+
+STORAGE_TYPES = {
+        'parquet': datastore.ParquetStore,
+        }
+
+class GHCND(object):
+    def __init__(self, stationid, token_file, store_type='parquet', 
+                data_folder='.'):
         self.stationid = stationid
         self.folder = Path(data_folder)
         self.token = open(token_file).read().strip()
+
+        self._store = STORAGE_TYPES[store_type]()
 
         station_info = self._api_station_request()
         if station_info == {}:
@@ -27,8 +36,7 @@ class NOAAWeatherCore(object):
         self.now = datetime.now()
 
         self._has_data = False
-        # This method should be defined in a data_store class
-        self._load_data()
+        self._store.load_data(self)
 
     def _api_station_request(self, ):
         # An API call function for station info
@@ -242,13 +250,13 @@ class NOAAWeatherCore(object):
             # Process and save the raw data
             self._raw_df_proc(results)
             # This method must be defined as a data_store object class
-            self._raw_df_save()
+            self._store.raw_df_save(self)
             # Remove the tempfile if the previous calls are successful
             temp_file.unlink()
 
             self._stats_df_proc()
             # This method must be defined as a data_store object class
-            self._stats_df_save()
+            self._store.stats_df_save(self)
 
     def daily_trends_sort(self, by='-log_p*slope', ascending=False, 
             abs_val=True):
@@ -267,4 +275,4 @@ class NOAAWeatherCore(object):
 
             self.stats[(cat, 'rank')] = 366 - ranks
 
-        self._stats_df_save()
+        self._store.stats_df_save(self)
