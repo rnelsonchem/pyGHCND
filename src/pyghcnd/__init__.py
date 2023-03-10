@@ -1,2 +1,2 @@
-from .frontends import NOAAWeatherParqMPL
+from .core import GHCND
 
