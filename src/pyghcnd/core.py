@@ -9,6 +9,7 @@ import pandas as pd
 import scipy.stats as sps
 
 from scipy.signal import fftconvolve
+from tqdm import trange
 
 class NOAAWeatherCore(object):
     def __init__(self, stationid, token_file, data_folder='.'):
@@ -221,7 +222,6 @@ class NOAAWeatherCore(object):
                 begin, results = pickle.load(fp)
         
         if status:
-            from tqdm import trange
             rng = trange
         else:
             rng = range
