@@ -22,16 +22,15 @@ classifiers = [
     'Programming Language :: Python :: 3',
 ]
 
-requires-python = ">=3"
+requires-python = ">=3.10"
 dependencies = [
-        'pandas>=1.0',
+        'pandas>=1.5',
         'pyarrow>=8.0',
-        'openpyxl',
-        'requests',
-        'scipy',
-        'matplotlib',
-        'tqdm',
-        'ipywidgets',
+        'openpyxl>=3.0',
+        'requests>=2.20',
+        'scipy>=1.10',
+        'matplotlib>=3.7',
+        'tqdm>=4.60',
         ]
         
 [project.urls]
