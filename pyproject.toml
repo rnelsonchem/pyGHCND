@@ -3,11 +3,11 @@ requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "noaa_temps"
+name = "pyGHCND"
 version = "0.0.1"
 
-description = "Aggregate and plot NOAA weather data"
-keywords = [ "NOAA", "Weather", "Plot", ]
+description = "Aggregate and plot NOAA GHCND weather data"
+keywords = [ "NOAA", "GHCND", "Weather", "Temperature", "Plot", "Statistics" ]
 #readme = "README.md"
 license = {text = "GPL-3.0-or-later"}
 
