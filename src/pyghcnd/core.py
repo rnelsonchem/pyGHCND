@@ -38,6 +38,77 @@ class GHCND(object):
         self._has_data = False
         self._store.load_data(self)
 
+    def update_data(self, status=False):
+        if self._has_data:
+            last_date = self.raw.index[-1] + timedelta(days=1)
+            begin = int(last_date.strftime('%Y'))
+        else:
+            begin = self.start_date
+        
+        # Add 1 to end for the range below
+        end = self.end_date + 1
+        
+        # Check for a temp file of downloaded data -- this is used for broken
+        # connections
+        temp_file = self.folder / f'temp_pickle_{self.stationid}'
+        results = []
+        if not temp_file.exists():
+            # Save a temp file with the current data
+            with open(temp_file, 'wb') as fp:
+                pickle.dump([begin, results], fp)
+        else:   
+            # If restarting an broken data download, load the saved data
+            with open(temp_file, 'rb') as fp:
+                begin, results = pickle.load(fp)
+        
+        if status:
+            rng = trange
+        else:
+            rng = range
+
+        for year in rng(begin, end): 
+            new_res = self._download_year(year)
+            results.extend(new_res)
+           
+            # Incremement this variable so restart at the correct year
+            begin += 1
+            with open(temp_file, 'wb') as fp:
+                pickle.dump([begin, results,], fp)
+
+        if results == []:
+            temp_file.unlink()
+
+        elif results != []:
+            # Process and save the raw data
+            self._raw_df_proc(results)
+            # This method must be defined as a data_store object class
+            self._store.raw_df_save(self)
+            # Remove the tempfile if the previous calls are successful
+            temp_file.unlink()
+
+            self._stats_df_proc()
+            # This method must be defined as a data_store object class
+            self._store.stats_df_save(self)
+
+    def daily_trends_sort(self, by='-log_p*slope', ascending=False, 
+            abs_val=True):
+        cats = ('TMIN', 'TMAX')
+
+        for cat in cats:
+            slopes = self.stats[(cat, 'slope')]
+            p_slope = self.stats[(cat, 'p_slope')]
+            self.stats[(cat, '-log_p')] = -np.log10(p_slope)
+
+            if abs_val: weight = slopes.abs()
+            else: weight = slopes
+            self.stats[(cat,'-log_p*slope')] = -np.log10(p_slope)*weight
+            
+            ranks = sps.rankdata(self.stats[(cat, by)], method='ordinal') 
+
+            self.stats[(cat, 'rank')] = 366 - ranks
+
+        self._store.stats_df_save(self)
+
     def _api_request(self, req_type='station', year=None, offset=None, 
                 debug=False):
         # An API call function for station info and weather data
@@ -144,6 +215,17 @@ class GHCND(object):
         # Delta years for linear regression analysis
         self.raw['yeardiff'] = self.raw.index.year - self.start_date
 
+    def _stats_df_proc(self, ):
+        gb = self.raw.groupby([self.raw.index.month, self.raw.index.day])
+        stats = gb.apply(self._data_reduce)
+        stats = stats.droplevel(level=2)
+
+        pivot = stats.pivot(values='value', columns=['data_group', 'type'])
+        pivot.index.rename(['month', 'day'], inplace=True)
+        pivot.columns.rename([None, None], inplace=True)
+
+        self.stats = pivot 
+
     def _data_reduce(self, group):
         vals = []
 
@@ -172,90 +254,9 @@ class GHCND(object):
         df = pd.DataFrame(vals, columns=['value', 'data_group', 'type'],)
         return df
 
-    def _stats_df_proc(self, ):
-        gb = self.raw.groupby([self.raw.index.month, self.raw.index.day])
-        stats = gb.apply(self._data_reduce)
-        stats = stats.droplevel(level=2)
-
-        pivot = stats.pivot(values='value', columns=['data_group', 'type'])
-        pivot.index.rename(['month', 'day'], inplace=True)
-        pivot.columns.rename([None, None], inplace=True)
-
-        self.stats = pivot 
-
     def _lin_smooth(self, data, n=15):
         kernel = np.ones(n)/n
         extended = np.r_[data[-n:], data, data[:n]]
         smoothed = fftconvolve(extended, kernel, 'same')
         return smoothed[n:-n] 
 
-    def update_data(self, status=False):
-        if self._has_data:
-            last_date = self.raw.index[-1] + timedelta(days=1)
-            begin = int(last_date.strftime('%Y'))
-        else:
-            begin = self.start_date
-        
-        # Add 1 to end for the range below
-        end = self.end_date + 1
-        
-        # Check for a temp file of downloaded data -- this is used for broken
-        # connections
-        temp_file = self.folder / f'temp_pickle_{self.stationid}'
-        results = []
-        if not temp_file.exists():
-            # Save a temp file with the current data
-            with open(temp_file, 'wb') as fp:
-                pickle.dump([begin, results], fp)
-        else:   
-            # If restarting an broken data download, load the saved data
-            with open(temp_file, 'rb') as fp:
-                begin, results = pickle.load(fp)
-        
-        if status:
-            rng = trange
-        else:
-            rng = range
-
-        for year in rng(begin, end): 
-            new_res = self._download_year(year)
-            results.extend(new_res)
-           
-            # Incremement this variable so restart at the correct year
-            begin += 1
-            with open(temp_file, 'wb') as fp:
-                pickle.dump([begin, results,], fp)
-
-        if results == []:
-            temp_file.unlink()
-
-        elif results != []:
-            # Process and save the raw data
-            self._raw_df_proc(results)
-            # This method must be defined as a data_store object class
-            self._store.raw_df_save(self)
-            # Remove the tempfile if the previous calls are successful
-            temp_file.unlink()
-
-            self._stats_df_proc()
-            # This method must be defined as a data_store object class
-            self._store.stats_df_save(self)
-
-    def daily_trends_sort(self, by='-log_p*slope', ascending=False, 
-            abs_val=True):
-        cats = ('TMIN', 'TMAX')
-
-        for cat in cats:
-            slopes = self.stats[(cat, 'slope')]
-            p_slope = self.stats[(cat, 'p_slope')]
-            self.stats[(cat, '-log_p')] = -np.log10(p_slope)
-
-            if abs_val: weight = slopes.abs()
-            else: weight = slopes
-            self.stats[(cat,'-log_p*slope')] = -np.log10(p_slope)*weight
-            
-            ranks = sps.rankdata(self.stats[(cat, by)], method='ordinal') 
-
-            self.stats[(cat, 'rank')] = 366 - ranks
-
-        self._store.stats_df_save(self)
