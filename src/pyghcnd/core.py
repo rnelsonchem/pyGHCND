@@ -18,11 +18,11 @@ STORAGE_TYPES = {
         }
 
 class GHCND(object):
-    def __init__(self, stationid, token_file, store_type='parquet', 
+    def __init__(self, stationid, token, store_type='parquet', 
                 data_folder='.'):
         self.stationid = stationid
         self.folder = Path(data_folder)
-        self.token = open(token_file).read().strip()
+        self.token = token
 
         self._store = STORAGE_TYPES[store_type]()
 
