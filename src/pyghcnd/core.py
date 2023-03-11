@@ -26,7 +26,7 @@ class GHCND(object):
 
         self._store = STORAGE_TYPES[store_type]()
 
-        station_info = self._api_station_request()
+        station_info = self._api_request()
         if station_info == {}:
             raise ValueError(f'Bad station info call: {stationid}')
         self._station_info = station_info
@@ -38,38 +38,21 @@ class GHCND(object):
         self._has_data = False
         self._store.load_data(self)
 
-    def _api_station_request(self, ):
-        # An API call function for station info
-        req_str = 'http://www.ncei.noaa.gov/cdo-web/api/v2/'\
-                f'stations/GHCND:{self.stationid}'
-
-        status_code_good = False
-        try_count = 0
-        MAX_TRIES = 5
-        while not status_code_good:
-            if try_count == MAX_TRIES:
-                raise ValueError(f"Too many requests (n={MAX_TRIES})")
-
-            req = requests.get(req_str, headers={'token': self.token})
-
-            if req.status_code == 200:
-                try:
-                    json = req.json()
-                except:
-                    try_count += 1
-                return json
-
-            try_count += 1
-
-    def _api_data_request(self, year, offset=None, debug=False):
-        # An API call function for weather data
-        req_str = 'http://www.ncei.noaa.gov/cdo-web/api/v2/data?'\
-            f"datasetid=GHCND&stationid=GHCND:{self.stationid}&"\
-            f"startdate={year}-01-01&enddate={year}-12-31&limit=1000&"
-
-        if offset:
-            req_str += f'offset={offset}&includemetadata=false'
-
+    def _api_request(self, req_type='station', year=None, offset=None, 
+                debug=False):
+        # An API call function for station info and weather data
+        req_str = 'http://www.ncei.noaa.gov/cdo-web/api/v2/'
+        
+        if req_type == 'station':
+            req_str += f'stations/GHCND:{self.stationid}'
+        
+        elif req_type == 'data':
+            req_str += "data?datasetid=GHCND&"\
+                f"stationid=GHCND:{self.stationid}&"\
+                f"startdate={year}-01-01&"\
+                f"enddate={year}-12-31&limit=1000&"
+            if offset:
+                req_str += f'offset={offset}&includemetadata=false'
 
         # Skip error checking for debugging purposes
         if debug:
@@ -87,7 +70,7 @@ class GHCND(object):
             if req.status_code == 200:
                 try:
                     json = req.json()
-                    if not offset and json != {}:
+                    if req_type == 'data' and not offset and json != {}:
                         meta_check = json['metadata']['resultset']
                 except:
                     try_count += 1
@@ -97,7 +80,7 @@ class GHCND(object):
 
     def _download_year(self, year):
         # Can only download data year by year
-        json = self._api_data_request(year)    
+        json = self._api_request('data', year)    
 
         # If the dataset is empty, then drop out of the run
         if json == {}:
@@ -114,7 +97,7 @@ class GHCND(object):
         offset = limit + 1
 
         for frame in range(frames):
-            json = self._api_data_request(year, offset)
+            json = self._api_request('data', year, offset)
             results.extend(json['results'])
             offset += limit
 
