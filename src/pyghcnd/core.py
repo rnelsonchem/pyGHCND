@@ -61,11 +61,7 @@ class GHCND(object):
             with open(temp_file, 'rb') as fp:
                 begin, results = pickle.load(fp)
         
-        if status:
-            rng = trange
-        else:
-            rng = range
-
+        rng = trange if status else range
         for year in rng(begin, end): 
             new_res = self._download_year(year)
             results.extend(new_res)
@@ -75,20 +71,36 @@ class GHCND(object):
             with open(temp_file, 'wb') as fp:
                 pickle.dump([begin, results,], fp)
 
-        if results == []:
-            temp_file.unlink()
+        if results != []:
+            # Convert raw data into a DataFrame, pivot to make columns from
+            # data type (i.e. TMAX), and remove leap year for convenience
+            raw = pd.DataFrame(results)
+            raw['date'] = pd.to_datetime(raw['date'])
+            raw = raw.pivot(columns='datatype', index='date', values='value')
+            mask = (raw.index.month == 2) & (raw.index.day == 29)
+            raw = raw.loc[~mask].copy()
+            
+            # Run data conversions and strip bad values
+            # Can be overwritten for more complex data management
+            raw = self._raw_df_proc(raw)
 
-        elif results != []:
-            # Process and save the raw data
-            self._raw_df_proc(results)
-            # This method must be defined as a data_store object class
-            self._store.raw_df_save(self)
-            # Remove the tempfile if the previous calls are successful
-            temp_file.unlink()
+            # Combine the old/new data if necessary
+            if self._has_data:
+                mask = self.raw.index >= raw.index[0]
+                self.raw = pd.concat([self.raw[~mask], raw])
+            else:
+                self.raw = raw
+                self._store.raw_df_save(self)
 
+            # Delta years for linear regression analysis
+            self.raw['yeardiff'] = self.raw.index.year - self.start_date
+
+            # Create the statistics DataFrame
             self._stats_df_proc()
-            # This method must be defined as a data_store object class
             self._store.stats_df_save(self)
+
+        # Remove the tempfile if the previous calls are successful
+        temp_file.unlink()
 
     def daily_trends_sort(self, by='-log_p*slope', ascending=False, 
             abs_val=True):
@@ -174,46 +186,27 @@ class GHCND(object):
 
         return results
 
-    def _raw_df_proc(self, results):
-        data = pd.DataFrame(results)
-        data['date'] = pd.to_datetime(data['date'])
-
-        # Pivot the data from longform into columns
-        data = data.pivot(columns='datatype', index='date', values='value')
-
-        # Remove leap year days to make things easier
-        mask = (data.index.month == 2) & (data.index.day == 29)
-        data = data.loc[~mask].copy()
-
+    def _raw_df_proc(self, raw):
         # Data conversions
         # Convert temps from C to F, drop obviously bad values
-        if hasattr(data, 'TMAX'):
-            data.TMAX = (data.TMAX*0.1)*9/5 + 32
-            data.loc[data.TMAX > 130., 'TMAX'] = np.nan
-        if hasattr(data, 'TMIN'):
-            data.TMIN = (data.TMIN*0.1)*9/5 + 32
-            data.loc[data.TMIN > 130., 'TMIN'] = np.nan
+        if hasattr(raw, 'TMAX'):
+            raw.TMAX = (raw.TMAX*0.1)*9/5 + 32
+            raw.loc[raw.TMAX > 130., 'TMAX'] = np.nan
+        if hasattr(raw, 'TMIN'):
+            raw.TMIN = (raw.TMIN*0.1)*9/5 + 32
+            raw.loc[raw.TMIN > 130., 'TMIN'] = np.nan
 
         # Convert precipitation from mm to inches
-        if hasattr(data, 'PRCP'): data.PRCP = (data.PRCP*0.1)/25.4 
-        if hasattr(data, 'SNOW'): data.SNOW = data.SNOW/25.4
-        if hasattr(data, 'SNWD'): data.SNWD = data.SNWD/25.4
+        if hasattr(raw, 'PRCP'): raw.PRCP = (raw.PRCP*0.1)/25.4 
+        if hasattr(raw, 'SNOW'): raw.SNOW = raw.SNOW/25.4
+        if hasattr(raw, 'SNWD'): raw.SNWD = raw.SNWD/25.4
         # If precipitation isn't given, ie NaN, then it was zero on that day
         # (assumption)
-        data.fillna(value={'PRCP':0, 'SNOW':0, 'SNWD':0,}, inplace=True)
+        raw.fillna(value={'PRCP':0, 'SNOW':0, 'SNWD':0,}, inplace=True)
         # Esitmate of total water = rain + snow/10, i.e. 1" snow = 0.1" rain
-        if hasattr(data, 'SNOW'): data['SNPR'] = data.PRCP + data.SNOW/10.
+        if hasattr(raw, 'SNOW'): raw['SNPR'] = raw.PRCP + raw.SNOW/10.
 
-        if self._has_data:
-            # Combine the old/new data, but be sure to mask out any partial
-            # data for an unfinished year
-            mask = self.raw.index >= data.index[0]
-            self.raw = pd.concat([self.raw[~mask], data])
-        else:
-            self.raw = data
-
-        # Delta years for linear regression analysis
-        self.raw['yeardiff'] = self.raw.index.year - self.start_date
+        return raw
 
     def _stats_df_proc(self, ):
         gb = self.raw.groupby([self.raw.index.month, self.raw.index.day])
