@@ -5,6 +5,14 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.dates as mpd
 
+from scipy.signal import fftconvolve
+
+def simple_smooth(data, n=15):
+    kernel = np.ones(n)/n
+    extended = np.r_[data[-n:], data, data[:n]]
+    smoothed = fftconvolve(extended, kernel, 'same')
+    return smoothed[n:-n] 
+
 def plot_temp(ghcnd, use_year=None, trends=True, smooth=15, 
             show=True, save=True, dpi=300):
     if not use_year:
@@ -39,11 +47,11 @@ def plot_temp(ghcnd, use_year=None, trends=True, smooth=15,
 
         # Smooth the data if necessary
         if smooth:
-            mean = ghcnd._lin_smooth(mean, smooth)
-            std = ghcnd._lin_smooth(std, smooth)
-        if smooth and trends:
-            icept = ghcnd._lin_smooth(icept, smooth)
-            trend = ghcnd._lin_smooth(trend, smooth)
+            mean = simple_smooth(mean, smooth)
+            std = simple_smooth(std, smooth)
+            if trends:
+                icept = simple_smooth(icept, smooth)
+                trend = simple_smooth(trend, smooth)
             
         # Transparent filled areas for extreme data
         mxs = plt.fill_between(dates, mn, mx, color=color, 

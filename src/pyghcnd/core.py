@@ -8,7 +8,6 @@ import numpy as np
 import pandas as pd
 import scipy.stats as sps
 
-from scipy.signal import fftconvolve
 from tqdm import trange
 
 from . import datastore
@@ -240,10 +239,4 @@ class GHCND(object):
 
         df = pd.DataFrame(vals, columns=['value', 'data_group', 'type'],)
         return df
-
-    def _lin_smooth(self, data, n=15):
-        kernel = np.ones(n)/n
-        extended = np.r_[data[-n:], data, data[:n]]
-        smoothed = fftconvolve(extended, kernel, 'same')
-        return smoothed[n:-n] 
 
