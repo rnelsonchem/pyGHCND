@@ -102,25 +102,6 @@ class GHCND(object):
         # Remove the tempfile if the previous calls are successful
         temp_file.unlink()
 
-    def daily_trends_sort(self, by='-log_p*slope', ascending=False, 
-            abs_val=True):
-        cats = ('TMIN', 'TMAX')
-
-        for cat in cats:
-            slopes = self.stats[(cat, 'slope')]
-            p_slope = self.stats[(cat, 'p_slope')]
-            self.stats[(cat, '-log_p')] = -np.log10(p_slope)
-
-            if abs_val: weight = slopes.abs()
-            else: weight = slopes
-            self.stats[(cat,'-log_p*slope')] = -np.log10(p_slope)*weight
-            
-            ranks = sps.rankdata(self.stats[(cat, by)], method='ordinal') 
-
-            self.stats[(cat, 'rank')] = 366 - ranks
-
-        self._store.stats_df_save(self)
-
     def _api_request(self, req_type='station', year=None, offset=None, 
                 debug=False):
         # An API call function for station info and weather data
@@ -219,6 +200,17 @@ class GHCND(object):
 
         self.stats = pivot 
 
+        # Add some ranking data
+        cats = ('TMIN', 'TMAX')
+        for cat in cats:
+            slopes = self.stats[(cat, 'slope')]
+            p_slope = self.stats[(cat, 'p_slope')]
+            log_p = -np.log10(p_slope)
+
+            self.stats[(cat, '-log_p')] = log_p 
+            self.stats[(cat, '-log_p*slope')] = log_p*slopes
+            self.stats[(cat, '-log_p*abs_slope')] = log_p*slopes.abs()
+
     def _data_reduce(self, group):
         vals = []
 
@@ -239,10 +231,9 @@ class GHCND(object):
                       abs(fit.intercept/fit.intercept_stderr)]
                 ps = sps.t.sf(ts, count-2)*2
 
+                vals.append([fit.intercept, data_group, 'icept'])
                 vals.append([fit.slope, data_group, 'slope'])
                 vals.append([ps[0], data_group, 'p_slope'])
-                vals.append([fit.intercept, data_group, 'icept'])
-                vals.append([ps[1], data_group, 'p_icept'])
 
         df = pd.DataFrame(vals, columns=['value', 'data_group', 'type'],)
         return df
