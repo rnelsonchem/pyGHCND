@@ -211,6 +211,9 @@ class GHCND(object):
             self.stats[(cat, '-log_p*slope')] = log_p*slopes
             self.stats[(cat, '-log_p*abs_slope')] = log_p*slopes.abs()
 
+        sorted_cols = ['TMIN', 'TMAX', 'PRCP', 'SNOW', 'SNPR']
+        self.stats = self.stats.loc[:, sorted_cols]
+
     def _data_reduce(self, group):
         vals = []
 
