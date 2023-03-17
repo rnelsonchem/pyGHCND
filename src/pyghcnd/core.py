@@ -166,27 +166,24 @@ class GHCND(object):
 
         return results
 
-    def _raw_df_proc(self, raw):
-        # Data conversions
-        # Convert temps from C to F, drop obviously bad values
-        if hasattr(raw, 'TMAX'):
-            raw.TMAX = (raw.TMAX*0.1)*9/5 + 32
-            raw.loc[raw.TMAX > 130., 'TMAX'] = np.nan
-        if hasattr(raw, 'TMIN'):
-            raw.TMIN = (raw.TMIN*0.1)*9/5 + 32
-            raw.loc[raw.TMIN > 130., 'TMIN'] = np.nan
+    def _raw_df_proc(self, group, flags):
+        datatype = group['datatype'].iloc[0]
 
-        # Convert precipitation from mm to inches
-        if hasattr(raw, 'PRCP'): raw.PRCP = (raw.PRCP*0.1)/25.4 
-        if hasattr(raw, 'SNOW'): raw.SNOW = raw.SNOW/25.4
-        if hasattr(raw, 'SNWD'): raw.SNWD = raw.SNWD/25.4
-        # If precipitation isn't given, ie NaN, then it was zero on that day
-        # (assumption)
-        raw.fillna(value={'PRCP':0, 'SNOW':0, 'SNWD':0,}, inplace=True)
-        # Esitmate of total water = rain + snow/10, i.e. 1" snow = 0.1" rain
-        if hasattr(raw, 'SNOW'): raw['SNPR'] = raw.PRCP + raw.SNOW/10.
+        if datatype in ['TMIN', 'TMAX']:
+            group['value'] = (group['value']*0.1)*9/5 + 32
+        elif datatype == 'PRCP':
+            group['value'] = (group['value']*0.1)/25.4
+        elif datatype in ['SNOW', 'SNWD']:
+            group['value'] = group['value']/25.4
 
-        return raw
+        attributes = group['attributes'].str.split(',', expand=True)
+        column_dict = {i:f'{flags[i]}' for i in range(4)}
+        attributes.rename(columns=column_dict, inplace=True)
+
+        return_dfs = [group[['date', 'datatype', 'value']], attributes]
+        return pd.concat(return_dfs, axis=1)
+
+
 
     def _stats_df_proc(self, ):
         gb = self.raw.groupby([self.raw.index.month, self.raw.index.day])
