@@ -39,7 +39,7 @@ class GHCND(object):
 
     def update_data(self, status=False):
         if self._has_data:
-            last_date = self.raw.index[-1] + timedelta(days=1)
+            last_date = self._raw_full.index[-1] + timedelta(days=1)
             begin = int(last_date.strftime('%Y'))
         else:
             begin = self.start_date
@@ -71,33 +71,43 @@ class GHCND(object):
                 pickle.dump([begin, results,], fp)
 
         if results != []:
-            # Convert raw data into a DataFrame, pivot to make columns from
-            # data type (i.e. TMAX), and remove leap year for convenience
-            raw = pd.DataFrame(results)
-            raw['date'] = pd.to_datetime(raw['date'])
-            raw = raw.pivot(columns='datatype', index='date', values='value')
-            mask = (raw.index.month == 2) & (raw.index.day == 29)
-            raw = raw.loc[~mask].copy()
+            # Convert raw data into a DataFrame and pivot to make columns from
+            # the data types (i.e. TMAX)
+            raw_df = pd.DataFrame(results)
+            raw_df['date'] = pd.to_datetime(raw_df['date'])
+            # Remove leap year for convenience
+            mask = (raw_df.date.dt.month == 2) & (raw_df.date.dt.day == 29)
+            raw_df = raw_df.loc[~mask].copy()
+
+            flags = ['mflag', 'qflag', 'sflag', 'tobs']
+            gb = raw_df.groupby('datatype', group_keys=False)
+            raw_new = gb.apply(self._raw_df_proc, flags=flags)\
+                        .pivot(columns='datatype', index='date', 
+                                values=['value',] + flags)\
+                        .swaplevel(axis=1)
             
-            # Run data conversions and strip bad values
-            # Can be overwritten for more complex data management
-            raw = self._raw_df_proc(raw)
+            # Convert string flags that are NaN to an empty strings
+            flag_values = raw_new.loc[:, (slice(None), flags[:-1])].fillna('')
+            raw_new.loc[:, (slice(None), flags[:-1])] = flag_values
+
+            # Sort the columns 
+            raw_new = raw_new[raw_new.columns.sort_values()]
 
             # Combine the old/new data if necessary
             if self._has_data:
-                mask = self.raw.index >= raw.index[0]
-                self.raw = pd.concat([self.raw[~mask], raw])
+                mask = self._raw_full.index >= raw_new.index[0]
+                self._raw_full = pd.concat([self._raw_full[~mask], raw_new])
             else:
-                self.raw = raw
+                self._raw_full = raw_new
                 self._store.raw_df_save(self)
 
-            # Delta years for linear regression analysis
-            self.raw['yeardiff'] = self.raw.index.year - self.start_date
-
-            # Create the statistics DataFrame
-            self._stats_df_proc()
-            self._store.stats_df_save(self)
-
+#            # Delta years for linear regression analysis
+#            self.raw['yeardiff'] = self.raw.index.year - self.start_date
+#
+#            # Create the statistics DataFrame
+#            self._stats_df_proc()
+#            self._store.stats_df_save(self)
+#
         # Remove the tempfile if the previous calls are successful
         temp_file.unlink()
 
@@ -182,8 +192,6 @@ class GHCND(object):
 
         return_dfs = [group[['date', 'datatype', 'value']], attributes]
         return pd.concat(return_dfs, axis=1)
-
-
 
     def _stats_df_proc(self, ):
         gb = self.raw.groupby([self.raw.index.month, self.raw.index.day])
