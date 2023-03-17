@@ -36,6 +36,8 @@ class GHCND(object):
 
         self._has_data = False
         self._store.load_data(self)
+        if self._has_data:
+            self._raw_df_filter()
 
     def update_data(self, status=False):
         if self._has_data:
@@ -101,14 +103,13 @@ class GHCND(object):
                 self._raw_full = raw_new
                 self._store.raw_df_save(self)
 
-#            # Delta years for linear regression analysis
-#            self.raw['yeardiff'] = self.raw.index.year - self.start_date
-#
-#            # Create the statistics DataFrame
-#            self._stats_df_proc()
-#            self._store.stats_df_save(self)
-#
-        # Remove the tempfile if the previous calls are successful
+            # Re-filter the raw data and re-create the stats data if new data
+            # was processed
+            self._raw_df_filter()
+            self._stats_df_proc()
+            self._store.stats_df_save(self)
+
+        # Remove the tempfile
         temp_file.unlink()
 
     def _api_request(self, req_type='station', year=None, offset=None, 
@@ -192,6 +193,28 @@ class GHCND(object):
 
         return_dfs = [group[['date', 'datatype', 'value']], attributes]
         return pd.concat(return_dfs, axis=1)
+
+    def _raw_df_filter(self, ):
+
+        # This method is only used in the given groupby, so there is no reason
+        # to make this a new method
+        def quality_filter(group):
+            name = group.columns[0][0]
+            # If the qflag is not an empty string, that suggest that the data
+            # point was bad
+            mask = group[name, 'qflag'] != ''
+            vals = group[name, 'value']
+            vals[mask] = np.nan
+            return vals
+            
+        gb = self._raw_full.groupby(level=0, axis=1)
+        self.raw = gb.apply(quality_filter)
+
+        # Delta years for linear regression analysis
+        self.raw['yeardiff'] = self.raw.index.year - self.start_date
+
+        # Combined snow and precip data, assuming that 1" snow == 0.1" precip
+        self.raw['SNPR'] = self.raw.PRCP + self.raw.SNOW*0.1
 
     def _stats_df_proc(self, ):
         gb = self.raw.groupby([self.raw.index.month, self.raw.index.day])
