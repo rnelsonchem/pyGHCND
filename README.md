@@ -188,6 +188,8 @@ directly from `pyghcnd`.
 
     from pyghcnd import GHCND, mplvis
 
+### Yearly Temperature Plot
+
 The `plot_temp` function is used to plot the statistical data for the year as
 well as the high/low temps for a given year. The call signature for this
 function is shown below.
@@ -215,16 +217,18 @@ sets the DPI for the saved figure.
 An example of a `plot_temp` plot for the Missoula Airport (as of mid-March
 2023) is shown below. The solid red and blue lines are the 2023 high and low
 temps, respectively, and the solid black line is the average daily
-temperature. The light blue/red shaded area shows the total range between the
-largest and smallest of measured temperatures for that particular day. The
-slightly darker shaded region shows the range defined by the average temp +/-
-one standard deviation. I.e. 68% of the measured values fall in that range.
-The dotted and dashed lines are the average temperatures estimated from the
-linear regression analysis of the daily temperatures. For example, in the plot
-shown, both the low and high daily temperatures show a considerable increase
-from 1948 (dotted line) to the present (dashed line) during January, March,
-and the summer/early fall months. (But from this plot, it is not possible to
-infer statistical significance to these changes.) 
+temperature. The thin black vertical line indicates the current date.  The
+light blue/red shaded area shows the total range between the largest and
+smallest of measured temperatures for that particular day. The slightly darker
+shaded region shows the range defined by the average temp +/- one standard
+deviation. I.e. 68% of the measured values fall in that range.  The dotted and
+dashed lines are the average temperatures estimated from the linear regression
+analysis of the daily temperatures. For example, in the plot shown, both the
+low and high daily temperatures show a considerable increase from 1948 (dotted
+line) to the present (dashed line) during January, March, and the summer/early
+fall months. (But from this plot, it is not possible to infer statistical
+significance from these changes.) 
 
 ![A yearly temperature plot for MSO, mid-March 2023](./_static/yearly_plot.png)
+
 
