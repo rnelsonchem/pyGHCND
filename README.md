@@ -226,5 +226,5 @@ from 1948 (dotted line) to the present (dashed line) during January, March,
 and the summer/early fall months. (But from this plot, it is not possible to
 infer statistical significance to these changes.) 
 
-![An example snippet of the statistics DataFrame](./_static/stats_head.png)
+![A yearly temperature plot for MSO, mid-March 2023](./_static/yearly_plot.png)
 
