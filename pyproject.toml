@@ -8,7 +8,7 @@ version = "0.0.1"
 
 description = "Aggregate and plot NOAA GHCND weather data"
 keywords = [ "NOAA", "GHCND", "Weather", "Temperature", "Plot", "Statistics" ]
-#readme = "README.md"
+readme = "README.md"
 license = {text = "GPL-3.0-or-later"}
 
 authors = [
@@ -34,7 +34,7 @@ dependencies = [
         ]
         
 [project.urls]
-#"Homepage" = "https://github.com/rnelsonchem/costcalc2"
+"Homepage" = "https://github.com/rnelsonchem/pyGHCND"
 
 [tool.setuptools.packages.find]
 where = ["src"]
