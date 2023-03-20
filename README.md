@@ -33,7 +33,9 @@ needs to be obtained from the CDO API website and saved into a file called
 'token.txt'. A description of each line of code is found in the sections
 below.
 
-    from pyghcnd import GHCND
+    from pyghcnd import GHCND, mplvis
+    import matplotlib.pyplot as plt
+    plt.style.use('ggplot')
 
     with open('token.txt') as token_file:
         token = token_file.read().strip()
@@ -41,6 +43,8 @@ below.
     temps.update_data(status=True)
 
     temps.stats.to_excel('MSO_stats.xlsx')
+    
+    mplvis.plot_temp(temps)
 
 
 ## Basic Data Collection
@@ -160,18 +164,67 @@ average='mean', standard deviation='std'. However, the maximum and minimum
 daily temperatures (TMAX and TMIN, respectively) are also subjected to a
 linear regression analysis. In other words, the trend in the highest and
 lowest temperatures for any given day in the year. The slope and intercept of
-these trends are the 'slope' and 'icept' columns, respectively. The 'p_slope'
+these trends are the 'slope' and 'icept' columns, respectively. The 'p\_slope'
 column is the p-value for the calculated slope. The two columns
-'-log_p\*slope' are the slopes weighted by the negative base-10 logarithm of
+'-log\_p\*slope' are the slopes weighted by the negative base-10 logarithm of
 the p value. These values are convenient for ranking these slope values, as
 will be described in the plotting section. This DataFrame is also saved to
 disk using the `store_type` selected above.
 
 ![An example snippet of the statistics DataFrame](./_static/stats_head.png)
 
-As all three of these data attributes are DataFrames, all of the DataFrame
-methods are available here as well. For example, the statistics data can be
-saved as an Excel file using the `to_excel` method.
+As all three of the data attributes are DataFrames, all of the methods for
+this object class are available here as well. For example, the statistics data
+can be saved as an Excel file using the `to_excel` method.
 
     temps.stats.to_excel('MSO_stats.xlsx')
+
+## Plotting Functions
+
+Several plotting functions are also provided for visualizing the raw and
+statistical weather data. Currently, these functions are only available for
+Matplotlib and are found in the `mplvis` module, which can be imported
+directly from `pyghcnd`.
+
+    from pyghcnd import GHCND, mplvis
+
+The `plot_temp` function is used to plot the statistical data for the year as
+well as the high/low temps for a given year. The call signature for this
+function is shown below.
+
+    mplvis.plot_temp(ghcnd, use_year=None, trends=True, smooth=15, 
+                show=True, save=True, dpi=300)
+
+The required `ghcnd` positional argument must be a `GHCND` object instance.
+The `use_year` keyword argument is used to select a year for plotting the
+high/low temps as an overlay on the statistical values. Its default of `None`
+causes it to select the current year. The `trends` Boolean keyword argument
+plots additional lines representing the high/low temperatures as extrapolated
+from the linear regression equation fitted to the daily temperature values.
+This can help to visualize the estimated increase/decrease in the average
+temperature over time. The `smooth` keyword argument is used to apply a simple
+moving average smoothing function to some of the plotted data, which can
+improve the appearance of the plots. The value can either be a positive
+integer (default: 15) that represents the number of points to use in the
+smoothing average, or this parameter can be `None`/`False`, which plots the
+unsmoothed data. The `show` and `save` Boolean keyword arguments turn on/off
+the showing of the plot in a GUI window/notebook cell and saving of the plot
+to disk, respectively. The `dpi` keyword argument is a positive integer that
+sets the DPI for the saved figure.
+
+An example of a `plot_temp` plot for the Missoula Airport (as of mid-March
+2023) is shown below. The solid red and blue lines are the 2023 high and low
+temps, respectively, and the solid black line is the average daily
+temperature. The light blue/red shaded area shows the total range between the
+largest and smallest of measured temperatures for that particular day. The
+slightly darker shaded region shows the range defined by the average temp +/-
+one standard deviation. I.e. 68% of the measured values fall in that range.
+The dotted and dashed lines are the average temperatures estimated from the
+linear regression analysis of the daily temperatures. For example, in the plot
+shown, both the low and high daily temperatures show a considerable increase
+from 1948 (dotted line) to the present (dashed line) during January, March,
+and the summer/early fall months. (But from this plot, it is not possible to
+infer statistical significance to these changes.) 
+
+![An example snippet of the statistics DataFrame](./_static/stats_head.png)
 
