@@ -26,7 +26,7 @@ over time.
 
 ## TOC
 
-- [Caveat on GHCNd Data](#caveat-on-ghcnd-data)
+- [Caveats and Notes on GHCNd Data](#caveats-and-notes-on-ghcnd-data)
 - [Simple Usage Example](#simple-usage-example) 
 - [Basic Data Collection](#basic-data-collection)
 - [The Data Attributes](#the-data-attributes)
