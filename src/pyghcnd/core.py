@@ -19,6 +19,8 @@ STORAGE_TYPES = {
 class GHCND(object):
     def __init__(self, stationid, token, store_type='parquet', 
                 data_folder='.'):
+        if stationid.startswith('GHCND:'):
+            stationid = stationid.removeprefix('GHCND:')
         self.stationid = stationid
         self.folder = Path(data_folder)
         self.token = token
