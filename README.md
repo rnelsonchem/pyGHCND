@@ -24,6 +24,37 @@ over time.
 * openpyxl >= 3.0
 * tqdm >= 4.60
 
+## TOC
+
+- [Caveat on GHCNd Data](#caveat-on-ghcnd-data)
+- [Simple Usage Example](#simple-usage-example) 
+- [Basic Data Collection](#basic-data-collection)
+- [The Data Attributes](#the-data-attributes)
+- [Plotting Functions and Examples](#plottting-functions-and-examples)
+
+## Caveats and Notes on GHCNd Data
+
+The GHCNd data are raw weather measurement data, and as such, they may suffer
+from deviations caused by a variety of factors, such as changes in measurement
+location/time/equipment/etc. The UCAR website has a nice [whitepaper on the
+GHCNd
+data](https://climatedataguide.ucar.edu/climate-data/ghcn-d-global-historical-climatology-network-daily-temperatures)
+that highlights some of these issues. Except for filtering measurements that
+are flagged as being problematic, `pyGHCND` does not currently apply any
+adjustments to compensate for these additional factors. With that being said,
+the statistical analyses performed by this module need to be interpreted with
+some caution. 
+
+The GHCNd network consists of a large number of weather stations that vary in
+their yearly coverage and data quality. The [US Historical Climate
+Network](https://www.ncei.noaa.gov/products/land-based-station/us-historical-climatology-network)
+is a subset of the GHCNd stations that are deemed to contain data of higher
+quality. The stations that are part of this network are flagged with `HCN` in
+the [GHCNd station
+list](https://www.ncei.noaa.gov/pub/data/ghcn/daily/ghcnd-stations.txt), for
+example. These stations are good starting points for data analysis using
+`pyGHCND`.
+
 ## Simple Usage Example
 
 The following code block is a complete example of the data collection,
@@ -182,7 +213,7 @@ can be saved as an Excel file using the `to_excel` method.
 
     temps.stats.to_excel('MSO_stats.xlsx')
 
-## Plotting Functions
+## Plotting Functions and Examples
 
 Several plotting functions are also provided for visualizing the raw and
 statistical weather data. Currently, these functions are only available for
