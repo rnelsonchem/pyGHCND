@@ -260,3 +260,45 @@ February being records lows for the daily high temperatures.
 
 ![A temperature difference plot for MSO, mid-March 2023](./_static/temp_diffs.png)
 
+### Precipitation Plot
+
+The `plot_prcp` function is used to plot various precipitation data, such as
+the cumulative precipitation for the year, daily precipitation values, and a
+distribution of yearly total precipitation. The call signature for this
+function is as shown below.
+
+    mplvis.plot_prcp(ghcnd, use_year=None, ptype='PRCP', n_missing=10, 
+                show=True, save=True, dpi=300)
+
+The required argument, `ghcnd`, is again a `GHCND` object instance with the
+required data. The `use_year` keyword argument a positive integer used to set
+the main display year. If this argument is left with its default value of
+`None`, the current year will be used. The `ptype` keyword argument is a
+string used to select the type of data to plot. The acceptable values are
+`'PRCP'` (precipitation, default), `'SNOW'` (snow), `'SNPR'` (sum of
+precipitation and snow/10). The `n_missing` keyword is a positive integer that
+is used to filter out yearly data for which the number of missing data are
+equal to or greater than this value. The keyword arguments `show`, `save`, and
+`dpi` are equivalent to the usage for the [Yearly Temperature Plot
+function](#yearly-temperature-plot).
+
+An example of a `plot_prcp` figure (using the keyword argument `ptype='SNPR'`)
+for the Missoula airport (as of mid-March 2023) is shown below. The figure
+consists of three subplots. The upper left plot show the cumulative
+precipitation (in inches) for the year. The solid black line is the average
+cumulative precipitation for the year based on all the data, and the solid red
+line is the cumulative data for the year defined by the `use_year` keyword
+argument. The thin, semi-transparent blue lines are cumulative precipitation
+for every year for which enough data is present (i.e.  having more than
+365-`n_missing` days of measurements data). The lower left bar plot shows
+daily precipitation values. Black bars are the average daily precipitation,
+and red bars are the measured precipitation for the year determined by the
+`use_year` keyword argument. The darker blue bars are the average daily
+precipitation plus one standard deviation, and the lightest blue bars are the
+maximum precipitation for a given day. The histogram on the right shows a
+distribution of total precipitation for all the years of station data. The
+solid vertical black line shows the average total precipitation for the year,
+and the solid red vertical line is the total precipitation for the year
+defined by the `use_year` keyword argument.
+
+![A precipitation plot for MSO, mid-March 2023](./_static/precip_plot.png)
