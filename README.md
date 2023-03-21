@@ -46,6 +46,8 @@ below.
     
     mplvis.plot_temp(temps)
     mplvis.plot_temp_diffs(temps)
+    mplvis.plot_prcp(temps, ptype='SNPR')
+    mplvis.plot_daily_temp(temps, day=1, month=1)
 
 
 ## Basic Data Collection
@@ -302,3 +304,44 @@ and the solid red vertical line is the total precipitation for the year
 defined by the `use_year` keyword argument.
 
 ![A precipitation plot for MSO, mid-March 2023](./_static/precip_plot.png)
+
+### Daily Temperature Trends
+
+The `plot_daily_temp` function is used to plot high and low temperature trends
+for a particular day of the year. The call signature for this function is
+shown below.
+
+    mplvis.plot_daily_temp(ghcnd, month, day, temp_type='both', p=0.05, 
+                  show=True, save=True, dpi=300):
+
+In addition to the `GHCND` instance positional argument `ghcnd`, there are two
+other required positional arguments: `month` and `day`. These need to be
+positive integers that correspond to the month (1-12) and day (1-31) of the
+year for which to plot the trends. The `temp_type` keyword argument is a
+string used to select the type of data to plot to create. The default `'both'`
+creates a plot for both the high and low daily temps. This can also be
+`'TMIN'` or `'TMAX'`, if a plot of only the low or high temperature data,
+respectively, is desired. The `p` keyword argument is a floating point number
+that corresponds to the p-value cutoff for determining statistical
+significance. This affect the plotting properties as described below. The
+default is `0.05`, which corresponds to a 95% confidence level. The keyword
+arguments `show`, `save`, and `dpi` are equivalent to the usage for the
+[Yearly Temperature Plot function](#yearly-temperature-plot).
+
+An example of the `plot_daily_temp` figure for both the high and low
+temperatures on January 1st at the Missoula airport (as of mid-March 2023) is
+shown below. The blue and red lines in the upper plots are the measured low
+and high temperatures for every year in the stations records. The black line
+is the fitted linear regression line for these data. This line will either be
+a solid or dashed line, depending on the p-value of the regression slope. If
+the p-value is greater than the `p` keyword argument value, then the slope is
+not significant, and the trend line will be dashed. Alternatively,
+statistically significant slopes will be plotted as solid lines. For the
+example plot, it appears that these temperatures do not show a statistically
+significant change over the lifetime of the station data. A method for
+plotting the most significant trends will be discussed below. The lower plots
+show the residuals, or trend minus actual temperatures, for the low and high
+temperature values. Ideally, the residuals should be randomly distributed
+about zero.  
+
+![A plot temperature trend for January 1st at MSO, mid-March 2023](./_static/daily_temp_plot_both.png)
