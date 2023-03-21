@@ -345,3 +345,29 @@ temperature values. Ideally, the residuals should be randomly distributed
 about zero.  
 
 ![A plot temperature trend for January 1st at MSO, mid-March 2023](./_static/daily_temp_plot_both.png)
+
+### Daily Trend Overview and Comparison
+
+The `plot_daily_trends` function is used to plot all of the daily trend
+information for the year on a single plot, which allows for comparisons of all
+trends throughout the year. The call signature for this function is shown
+below.
+
+    mplvis.plot_daily_trends(ghcnd, p=0.05, show=True, save=True, dpi=300)
+
+The `ghcnd` positional argument is used for a `GHCND` object instance that
+contains the data to plot. The `p` keyword argument is a floating point number
+that corresponds to a p-value cutoff for highlighting statistically
+significant trends, as described below. The default `0.05` corresponds to a
+95% confidence level cutoff. The keyword arguments `show`, `save`, and `dpi`
+are equivalent to the usage for the [Yearly Temperature Plot
+function](#yearly-temperature-plot). 
+
+An example of a `plot_daily_trends` figure is shown below. The left-hand
+scatter plots show the daily trend slopes by date for the daily low and high
+temps. Statistically significant trends, as defined by p-value<`p` keyword
+argument value, are highlighted in black. The two plots on the right are
+showing the same data but in histogram form. In this case, a considerable
+number of days appear to be getting warmer in both the day and night. 
+
+![A plot of all daily temperature trends at MSO, mid-March 2023](./_static/daily_trends.png)
