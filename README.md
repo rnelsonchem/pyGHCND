@@ -45,6 +45,7 @@ below.
     temps.stats.to_excel('MSO_stats.xlsx')
     
     mplvis.plot_temp(temps)
+    mplvis.plot_temp_diffs(temps)
 
 
 ## Basic Data Collection
@@ -224,11 +225,38 @@ shaded region shows the range defined by the average temp +/- one standard
 deviation. I.e. 68% of the measured values fall in that range.  The dotted and
 dashed lines are the average temperatures estimated from the linear regression
 analysis of the daily temperatures. For example, in the plot shown, both the
-low and high daily temperatures show a considerable increase from 1948 (dotted
-line) to the present (dashed line) during January, March, and the summer/early
-fall months. (But from this plot, it is not possible to infer statistical
+low and high daily temperatures increase considerably from 1948 (dotted line)
+to the present (dashed line) during January, March, and the summer/early fall
+months. (But from this plot, it is not possible to infer statistical
 significance from these changes.) 
 
 ![A yearly temperature plot for MSO, mid-March 2023](./_static/yearly_plot.png)
 
+### Recent Temperature Deviations
+
+The `plot_temp_diffs` function is used to plot the deviations of the recent
+high/low temperatures from the average values over the same time frame. The
+call signature of this function is shown below.
+
+    mplvis.plot_temp_diffs(ghcnd, ndays=90, show=True, save=True, dpi=300)
+
+Again, the only required positional argument, `ghcnd`, is a `GHCND` object
+instance containing the data to be plotted. The `ndays` keyword argument is a
+positive integer that determines the number of days to use in the plot. The
+default (`90`) means that the deviations for the final 90 days of data will be
+plotted. The keyword arguments `show`, `save`, and `dpi` are equivalent to the
+usage for the [Yearly Temperature Plot function](#yearly-temperature-plot).
+
+An example of a `plot_temp_diffs` figure for the Missoula Airport (as of
+mid-March 2023) is shown below. The color coding and plotting elements are
+equivalent the [Yearly Temperature Plot function](#yearly-temperature-plot).
+In this case, the data oscillate around 0 on the y-axis, because that
+represents the average temperature for that particular day. If the solid lines
+are greater than 0, then the daily high/low temperature was warmer than
+average, and vice versa for points below the center of the y-axis. In the
+example plot, the temperatures for most days appear to be about average;
+however, there are a few particularly cold streaks, with the cold snap in late
+February being records lows for the daily high temperatures. 
+
+![A temperature difference plot for MSO, mid-March 2023](./_static/temp_diffs.png)
 
